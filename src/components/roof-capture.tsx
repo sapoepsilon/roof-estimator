@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLoadScript } from "@react-google-maps/api";
 import html2canvas from "html2canvas";
 import { analyzeRoofImage, RoofMeasurements } from "@/app/actions/analyze-roof";
+import { RoofResults } from "./roof-results";
 
 interface RoofCaptureProps {
   address: string;
@@ -11,6 +12,7 @@ interface RoofCaptureProps {
   lng: number;
   onCapture: (images: string[], measurements?: RoofMeasurements) => void;
   onError: (error: string) => void;
+  onClose: () => void;
 }
 
 const CAPTURE_ANGLES = [0, 60, 120, 180, 240, 300]; // 6 different angles
@@ -23,12 +25,15 @@ export default function RoofCapture({
   lng,
   onCapture,
   onError,
+  onClose,
 }: RoofCaptureProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [measurements, setMeasurements] = useState<RoofMeasurements>();
+  const [analysisError, setAnalysisError] = useState<string>();
 
   // Handle client-side only mounting
   useEffect(() => {
@@ -72,6 +77,11 @@ export default function RoofCapture({
     }
   }, [loadError, onError]);
 
+  useEffect(() => {
+    setCapturedImages([]);
+    setMeasurements(undefined);
+  }, [address]);
+
   const handleCaptureAll = async () => {
     if (!isMounted || !map || !mapRef.current) {
       onError("Map is not ready for capture");
@@ -80,7 +90,11 @@ export default function RoofCapture({
 
     try {
       setIsAnalyzing(true);
+      setAnalysisError(undefined);
       const newImages: string[] = [];
+      console.log("Starting image capture...");
+      
+      // First capture all images
       for (const angle of CAPTURE_ANGLES) {
         map.setHeading(angle);
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -96,33 +110,56 @@ export default function RoofCapture({
 
         const imageUrl = canvas.toDataURL();
         newImages.push(imageUrl);
+        console.log(`Captured image at angle ${angle}`);
       }
 
-      try {
-        // Analyze the best image (front view) using server action
-        const bestImage = newImages[0]; // Using first image (0° angle) for analysis
-        const base64Image = bestImage.split(",")[1];
-        const analysisResult = await analyzeRoofImage(base64Image);
+      console.log("All images captured, setting state...");
+      setCapturedImages(newImages);
+      
+      // Then analyze the best image
+      console.log("Starting image analysis...");
+      const bestImage = newImages[0];
+      const base64Image = bestImage.split(",")[1];
+      const analysisResult = await analyzeRoofImage(base64Image);
 
-        if (analysisResult.error) {
-          throw new Error(analysisResult.error);
-        }
+      if (analysisResult.error) {
+        console.error("Analysis error:", analysisResult.error);
+        setAnalysisError(analysisResult.error);
+        return;
+      }
 
-        // Call onCapture with both images and measurements
+      console.log("Analysis complete:", analysisResult.measurements);
+      setMeasurements(analysisResult.measurements);
+      // Call onCapture after a small delay to ensure state updates are complete
+      setTimeout(() => {
         onCapture(newImages, analysisResult.measurements);
-        setCapturedImages(newImages);
-      } catch (analysisError) {
-        throw new Error(
-          analysisError instanceof Error
-            ? analysisError.message
-            : "Analysis failed"
-        );
-      }
+      }, 100);
     } catch (error) {
-      onError(`Failed to capture or analyze images: ${error}`);
+      console.error("Capture/analysis error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setAnalysisError(errorMessage);
+      onError(`Failed to capture or analyze images: ${errorMessage}`);
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const CapturedImages = ({ images }: { images: string[] }) => {
+    if (images.length === 0) return null;
+    
+    return (
+      <div className="grid grid-cols-3 gap-4 mt-4">
+        {images.map((image, index) => (
+          <div key={`${address}-${index}`} className="relative aspect-square">
+            <img
+              src={image}
+              alt={`Roof view ${index}`}
+              className="object-cover w-full h-full rounded-lg"
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // Don't render anything during SSR
@@ -140,7 +177,16 @@ export default function RoofCapture({
 
   return (
     <div className="w-full space-y-4">
-      <h2 className="text-xl font-semibold">Roof Capture for {address}</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Roof Capture for {address}</h2>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+          aria-label="Close roof capture"
+        >
+          ✕
+        </button>
+      </div>
       <div
         ref={mapRef}
         className="h-96 w-full rounded-lg overflow-hidden shadow-lg"
@@ -157,6 +203,16 @@ export default function RoofCapture({
           {capturedImages.length} of {CAPTURE_ANGLES.length} angles captured
         </span>
       </div>
+      
+      {/* Always show images if they exist */}
+      {capturedImages.length > 0 && <CapturedImages images={capturedImages} />}
+      
+      {/* Show results with error state */}
+      <RoofResults
+        measurements={measurements}
+        isLoading={isAnalyzing}
+        error={analysisError}
+      />
     </div>
   );
 }

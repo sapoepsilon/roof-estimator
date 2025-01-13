@@ -135,14 +135,11 @@ export function AddressSearch({
             address={selectedPlace.address}
             lat={selectedPlace.lat}
             lng={selectedPlace.lng}
-            onCapture={(images) => {
+            onCapture={(images, measurements) => {
               onCaptureComplete?.(images);
-              setShowRoofCapture(false);
             }}
-            onError={(error) => {
-              setError(error);
-              setShowRoofCapture(false);
-            }}
+            onError={setError}
+            onClose={() => setShowRoofCapture(false)}
           />
         </div>
       )}
