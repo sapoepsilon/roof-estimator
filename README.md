@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Roof Estimator Pro
+
+A modern Next.js application for accurate roof measurements and estimations using satellite imagery and Google Maps integration.
+
+## Project Overview
+
+Roof Estimator Pro is a professional-grade tool that helps contractors, solar installers, and property managers accurately measure and analyze roof dimensions. Using advanced satellite imagery and Google Maps integration, the application provides detailed roof measurements and property information.
+
+### Key Features
+
+- 🏠 Address lookup using Google Places API
+- 🛰️ Satellite imagery integration
+- 📏 Accurate roof measurements and area calculations
+- 📊 Detailed property information
+- 📱 Responsive design for all devices
+
+## Tech Stack
+
+- Next.js 15
+- TypeScript
+- TailwindCSS
+- Google Maps/Places API
+- ESLint
+- Jest & React Testing Library
+
+## Project Guidelines
+
+This project follows strict development guidelines to ensure code quality and maintainability:
+
+- [GUIDELINES.md](./GUIDELINES.md) - Main project guidelines and architecture
+- [API_GUIDELINES.md](./docs/API_GUIDELINES.md) - API integration standards
+- [COMPONENT_GUIDELINES.md](./docs/COMPONENT_GUIDELINES.md) - Component architecture and best practices
+- [TESTING_GUIDELINES.md](./docs/TESTING_GUIDELINES.md) - Testing strategies and requirements
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/roof-estimator.git
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+Edit `.env.local` and add your Google Maps API key:
+```
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) to view the application
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/             # Next.js app router components
+├── components/      # Reusable UI components
+├── hooks/           # Custom React hooks
+├── lib/            # Utility functions
+├── types/          # TypeScript definitions
+└── tests/          # Test files
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contributing
 
-## Deploy on Vercel
+Please read our [Contributing Guidelines](./CONTRIBUTING.md) before submitting any pull requests.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
