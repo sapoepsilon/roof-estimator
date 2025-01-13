@@ -3,6 +3,37 @@
 ## Overview
 This document outlines the standards and best practices for API integrations in the Roof Estimator Pro project.
 
+## Server Actions Structure
+
+### Actions Directory Structure
+```
+app/actions/
+├── analyze-roof.ts     # Roof analysis actions
+├── validate-address.ts # Address validation actions
+└── calculate-area.ts   # Area calculation actions
+```
+
+### Server Action Pattern
+```typescript
+// Example server action
+'use server'
+
+interface RoofAnalysisParams {
+  address: string;
+  placeId: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
+async function analyzeRoof(params: RoofAnalysisParams) {
+  // Server-side validation
+  // API integration logic
+  // Return response
+}
+```
+
 ## Google Maps/Places API Integration
 
 ### Setup and Configuration
@@ -44,16 +75,17 @@ interface AddressResult {
 }
 ```
 
-## Roof Analysis API
+## Roof Analysis Actions
 
-### Endpoints
-1. `/api/address/validate`
-2. `/api/roof/analyze`
-3. `/api/roof/calculate`
+### Server Routes
+1. `app/actions/validate-address.ts`
+2. `app/actions/analyze-roof.ts`
+3. `app/actions/calculate-area.ts`
 
-### Request/Response Structure
+### Action Parameters and Returns
 ```typescript
-interface RoofAnalysisRequest {
+// Server action type definitions
+interface RoofAnalysisAction {
   address: string;
   placeId: string;
   coordinates: {
@@ -62,7 +94,7 @@ interface RoofAnalysisRequest {
   };
 }
 
-interface RoofAnalysisResponse {
+interface RoofAnalysisResult {
   area: number;
   pitch: number;
   type: RoofType;
@@ -70,20 +102,23 @@ interface RoofAnalysisResponse {
 }
 ```
 
-### Caching Strategy
-1. Implement Redis/Memcached for API responses
-2. Cache invalidation rules
-3. Rate limiting implementation
+### Error Handling in Server Actions
+1. Use try-catch blocks with proper error types
+2. Implement proper error boundaries
+3. Handle API rate limits
+4. Implement retry logic
+5. Cache responses when appropriate
 
 ## Security Best Practices
 
-### API Key Management
-1. Use environment variables
-2. Implement key rotation
+### Server-Side Security
+1. Use environment variables for sensitive data
+2. Implement proper input validation in server actions
 3. Set up proper CORS policies
+4. Use proper authentication and authorization
 
 ### Request Validation
-1. Validate all input parameters
+1. Validate all input parameters server-side
 2. Sanitize user input
 3. Implement request size limits
 
@@ -99,30 +134,33 @@ interface RoofAnalysisResponse {
 2. Handle rate limit errors gracefully
 3. Show appropriate user feedback
 
-## Testing API Integration
+## Testing Server Actions
 
 ### Unit Tests
 ```typescript
-describe('GooglePlacesService', () => {
-  it('should fetch address details correctly', async () => {
+describe('analyzeRoofAction', () => {
+  it('should analyze roof details correctly', async () => {
     // Test implementation
   });
 });
 ```
 
 ### Integration Tests
-1. Mock API responses
+1. Mock external API responses
 2. Test error scenarios
 3. Validate response handling
+4. Test server action boundaries
 
 ## Monitoring and Logging
 
-### API Metrics
-1. Response times
+### Action Metrics
+1. Server action execution times
 2. Error rates
 3. Usage patterns
+4. Memory usage
 
 ### Logging
-1. Request/response logging
-2. Error logging
+1. Server action invocation logging
+2. Error logging with stack traces
 3. Performance monitoring
+4. Request/response logging for external API calls

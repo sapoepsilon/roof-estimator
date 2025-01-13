@@ -1,14 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useLoadScript } from "@react-google-maps/api";
 import { useDebouncedCallback } from "use-debounce";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import RoofCapture from "./roof-capture";
+import { getPlacePredictions, getPlaceDetails } from "@/app/actions/google-maps";
+import type { PlacePrediction, PlaceDetails } from "@/types/google-maps";
 
 interface AddressSearchProps {
-  onSelect?: (address: google.maps.places.PlaceResult) => void;
+  onSelect?: (place: PlaceDetails) => void;
   onCaptureComplete?: (images: string[]) => void;
 }
 
@@ -17,9 +18,7 @@ export function AddressSearch({
   onCaptureComplete,
 }: AddressSearchProps) {
   const [input, setInput] = React.useState("");
-  const [predictions, setPredictions] = React.useState<
-    google.maps.places.AutocompletePrediction[]
-  >([]);
+  const [predictions, setPredictions] = React.useState<PlacePrediction[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = React.useState<{
@@ -29,56 +28,21 @@ export function AddressSearch({
   } | null>(null);
   const [showRoofCapture, setShowRoofCapture] = React.useState(false);
 
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
-    libraries: ["places"],
-  });
-
-  const autocompleteService =
-    React.useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = React.useRef<google.maps.places.PlacesService | null>(
-    null
-  );
-
-  React.useEffect(() => {
-    if (isLoaded && !autocompleteService.current) {
-      autocompleteService.current =
-        new google.maps.places.AutocompleteService();
-    }
-  }, [isLoaded]);
-
-  // Separate useEffect for PlacesService initialization on client only
-  React.useEffect(() => {
-    if (typeof window !== "undefined" && isLoaded && !placesService.current) {
-      const placesDiv = document.createElement("div");
-      placesService.current = new google.maps.places.PlacesService(placesDiv);
-    }
-  }, [isLoaded]);
-
-  const fetchPredictions = useDebouncedCallback((input: string) => {
-    if (!input || !autocompleteService.current) return;
+  const fetchPredictions = useDebouncedCallback(async (input: string) => {
+    if (!input) return;
 
     setLoading(true);
     setError(null);
 
-    autocompleteService.current.getPlacePredictions(
-      {
-        input,
-        types: ["address"],
-        componentRestrictions: { country: "us" },
-      },
-      (predictions, status) => {
-        setLoading(false);
-
-        if (status !== google.maps.places.PlacesServiceStatus.OK) {
-          setError("Failed to fetch address suggestions");
-          setPredictions([]);
-          return;
-        }
-
-        setPredictions(predictions || []);
-      }
-    );
+    try {
+      const result = await getPlacePredictions(input);
+      setPredictions(result.predictions || []);
+    } catch (error) {
+      setError("Failed to fetch address suggestions");
+      setPredictions([]);
+    } finally {
+      setLoading(false);
+    }
   }, 300);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,41 +56,38 @@ export function AddressSearch({
     }
   };
 
-  const handlePredictionSelect = (
-    prediction: google.maps.places.AutocompletePrediction
-  ) => {
-    if (!placesService.current) return;
-
-    placesService.current.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ["address_components", "geometry", "formatted_address"],
-      },
-      (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-          onSelect?.(place);
-          setInput(place.formatted_address || "");
-          setPredictions([]);
-
-          if (place.geometry?.location) {
-            setSelectedPlace({
-              address: place.formatted_address || "",
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            });
-          }
-        }
+  const handlePredictionSelect = async (prediction: PlacePrediction) => {
+    try {
+      const place = await getPlaceDetails(prediction.place_id);
+      
+      // Validate if this is a valid address
+      const hasStreetNumber = place.address_components?.some(
+        component => component.types.includes("street_number")
+      );
+      const hasRoute = place.address_components?.some(
+        component => component.types.includes("route")
+      );
+      
+      if (!hasStreetNumber || !hasRoute) {
+        setError("Please enter a complete street address");
+        return;
       }
-    );
+
+      onSelect?.(place);
+      setInput(place.formatted_address || "");
+      setPredictions([]);
+
+      if (place.geometry?.location) {
+        setSelectedPlace({
+          address: place.formatted_address || "",
+          lat: place.geometry.location.lat,
+          lng: place.geometry.location.lng,
+        });
+      }
+    } catch (error) {
+      setError("Failed to fetch place details");
+    }
   };
-
-  if (loadError) {
-    return <div className="text-red-500">Error loading Google Maps</div>;
-  }
-
-  if (!isLoaded) {
-    return <div className="animate-pulse">Loading...</div>;
-  }
 
   return (
     <div className="relative w-full">
