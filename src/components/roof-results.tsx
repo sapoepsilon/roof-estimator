@@ -1,24 +1,28 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RoofMeasurements } from "@/app/actions/analyze-roof"
-import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CostEstimation } from "./cost-estimation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoofMeasurements } from "@/app/actions/analyze-roof";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CostEstimation } from "./cost-estimation";
 
 interface RoofResultsProps {
-  measurements?: RoofMeasurements
-  isLoading?: boolean
-  error?: string
+  measurements?: RoofMeasurements;
+  isLoading?: boolean;
+  error?: string;
 }
 
-export function RoofResults({ measurements, isLoading, error }: RoofResultsProps) {
+export function RoofResults({
+  measurements,
+  isLoading,
+  error,
+}: RoofResultsProps) {
   if (error) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>{error}</AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
@@ -76,7 +80,10 @@ export function RoofResults({ measurements, isLoading, error }: RoofResultsProps
               <Skeleton className="h-8 w-[100px]" />
             ) : (
               <div className="text-2xl font-bold">
-                {(measurements?.confidence * 100).toFixed(1)}%
+                {measurements?.confidence
+                  ? (measurements.confidence * 100).toFixed(1)
+                  : 0}
+                %
               </div>
             )}
           </CardContent>
@@ -84,5 +91,5 @@ export function RoofResults({ measurements, isLoading, error }: RoofResultsProps
       </div>
       <CostEstimation measurements={measurements} isLoading={isLoading} />
     </div>
-  )
+  );
 }

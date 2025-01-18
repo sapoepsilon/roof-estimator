@@ -161,6 +161,21 @@ it('should update address when selected', () => {
 });
 ```
 
+## Import Conventions
+
+### Use ES6 Imports
+Always use ES6 import statements instead of CommonJS `require()`. This ensures consistency with modern JavaScript practices and better TypeScript integration.
+
+```typescript
+// ✅ Good
+import { Component } from './component';
+import { render } from '@testing-library/react';
+
+// ❌ Bad
+const { Component } = require('./component');
+const { render } = require('@testing-library/react');
+```
+
 ## Performance Testing
 
 ### Metrics to Test
@@ -200,4 +215,3 @@ describe('Performance', () => {
     }
   }
 }
-```

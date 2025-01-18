@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import RoofCapture from './roof-capture';
+import { useState } from "react";
+import RoofCapture from "./roof-capture";
 
 interface RoofCaptureWrapperProps {
   address: string;
@@ -9,7 +9,11 @@ interface RoofCaptureWrapperProps {
   lng: number;
 }
 
-export default function RoofCaptureWrapper({ address, lat, lng }: RoofCaptureWrapperProps) {
+export default function RoofCaptureWrapper({
+  address,
+  lat,
+  lng,
+}: RoofCaptureWrapperProps) {
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,17 +29,18 @@ export default function RoofCaptureWrapper({ address, lat, lng }: RoofCaptureWra
   return (
     <div className="space-y-6">
       {error && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
+        <div className="p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>
       )}
-      
+
       <RoofCapture
         address={address}
         lat={lat}
         lng={lng}
         onCapture={handleCapture}
         onError={handleError}
+        onClose={function (): void {
+          throw new Error("Function not implemented.");
+        }}
       />
 
       {images.length > 0 && (

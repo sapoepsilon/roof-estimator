@@ -5,7 +5,10 @@ import { useDebouncedCallback } from "use-debounce";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import RoofCapture from "./roof-capture";
-import { getPlacePredictions, getPlaceDetails } from "@/app/actions/google-maps";
+import {
+  getPlacePredictions,
+  getPlaceDetails,
+} from "@/app/actions/google-maps";
 import type { PlacePrediction, PlaceDetails } from "@/types/google-maps";
 
 interface AddressSearchProps {
@@ -38,7 +41,7 @@ export function AddressSearch({
       const result = await getPlacePredictions(input);
       setPredictions(result.predictions || []);
     } catch (error) {
-      setError("Failed to fetch address suggestions");
+      console.error("Error fetching place predictions:", error);
       setPredictions([]);
     } finally {
       setLoading(false);
@@ -59,15 +62,15 @@ export function AddressSearch({
   const handlePredictionSelect = async (prediction: PlacePrediction) => {
     try {
       const place = await getPlaceDetails(prediction.place_id);
-      
+
       // Validate if this is a valid address
-      const hasStreetNumber = place.address_components?.some(
-        component => component.types.includes("street_number")
+      const hasStreetNumber = place.address_components?.some((component) =>
+        component.types.includes("street_number")
       );
-      const hasRoute = place.address_components?.some(
-        component => component.types.includes("route")
+      const hasRoute = place.address_components?.some((component) =>
+        component.types.includes("route")
       );
-      
+
       if (!hasStreetNumber || !hasRoute) {
         setError("Please enter a complete street address");
         return;
@@ -85,7 +88,7 @@ export function AddressSearch({
         });
       }
     } catch (error) {
-      setError("Failed to fetch place details");
+      setError(`Error fetching address details: ${error}`);
     }
   };
 
@@ -137,6 +140,8 @@ export function AddressSearch({
             lng={selectedPlace.lng}
             onCapture={(images, measurements) => {
               onCaptureComplete?.(images);
+              console.log("Captured images:", images);
+              console.log("Measurements:", measurements);
             }}
             onError={setError}
             onClose={() => setShowRoofCapture(false)}
